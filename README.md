@@ -1,4 +1,4 @@
-# [Objects Matter: Learning Object Relation Graph for Robust Absolute Pose Regression](https://arxiv.org/abs/1909.03557)
+# [Objects Matter: Learning Object Relation Graph for Robust Absolute Pose Regression](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4179862)
 
 Chengyu Qiao, Zhiyu Xiang, Xinglu Wang, Shuya Chen, Yuangang Fan and Xijun Zhao
 
