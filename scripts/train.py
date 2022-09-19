@@ -45,10 +45,8 @@ section = settings['dataloader']
 npz_log = section.getint('npz_log')
 num_obj_cut = section.getint('num_obj_cut')
 section = settings['optimization']
-#json.loads用于解码JSON数据
 optim_config = {k: json.loads(v) for k,v in section.items() if k != 'opt' and k != 'dif'}
 opt_method = section['opt']
-#pop方法删除字典给定键key及对应的值，返回值为被删除的值
 lr = optim_config.pop('lr')
 weight_decay = optim_config.pop('weight_decay')
 dif = section.getboolean('dif')
@@ -58,7 +56,6 @@ act = section['act']
 aggr = section['aggr']
 
 section = settings['hyperparameters']
-#getfloat(section,option)将在section中指定的option转换为浮点数的方法
 dropout = section.getfloat('dropout')
 color_jitter = section.getfloat('color_jitter', 0)
 brightness = section.getfloat('brightness', 0)
@@ -68,11 +65,8 @@ hue = section.getfloat('hue', 0)
 sax = section.getfloat('beta_t')
 saq = section.getfloat('beta_q')
 q_loss_weight = section.getfloat('q_loss_weight')
-#find方法检测字符串中是否包含子字符串str
 if args.model.find('mapnet') >= 0:
-  #getint(section,option)将在section中指定的option转换为整数的方法
   skip = section.getint('skip')
-  #getboolean(section,option)将在指定的section中的option转换为布尔值的方法
   real = section.getboolean('real')
   variable_skip = section.getboolean('variable_skip')
   srx = section.getfloat('gamma_t')
@@ -122,10 +116,7 @@ else:
 # optimizer
 if dif:
   if args.model.find('posenet') >= 0:
-    #id函数返回对象的唯一标识符，标识符是一个整数
-    #map会根据提供的函数对指定序列做映射
     fe_params = list(map(id, model.feature_extractor.parameters()))
-    #filter函数用于过滤序列，过滤掉不符合条件的元素，返回由符合条件元素组成的新列表
     rest_params = filter(lambda p: id(p) not in fe_params, model.parameters())
     param_list = [{'params': model.feature_extractor.parameters(), 'lr': 1e-4},
                   {'params': rest_params}]
@@ -136,7 +127,6 @@ if dif:
                   {'params': rest_params}]
 else:
   param_list = [{'params': model.parameters()}]
-#hasattr用于判断对象是否包含对应的属性
 if args.learn_beta and hasattr(train_criterion, 'sax') and \
     hasattr(train_criterion, 'saq'):
   param_list.append({'params': [train_criterion.sax, train_criterion.saq]})
@@ -165,7 +155,6 @@ if color_jitter > 0 or brightness > 0 or contrast > 0 or saturation > 0 or hue >
     t_saturation = saturation
   if hue > 0:
     t_hue = hue
-  #ColorJitter随机改变图像的亮度、对比度和饱和度
   tforms.append(transforms.ColorJitter(brightness=t_brightness,
     contrast=t_contrast, saturation=t_saturation, hue=t_hue))
 tforms.append(transforms.ToTensor())

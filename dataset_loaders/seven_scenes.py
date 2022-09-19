@@ -1,9 +1,4 @@
 """
-Copyright (C) 2018 NVIDIA Corporation.  All rights reserved.
-Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
-"""
-
-"""
 pytorch data loader for the 7-scenes dataset
 """
 import os
@@ -52,7 +47,6 @@ class SevenScenes(data.Dataset):
         np.random.seed(seed)
         
         # directories
-        # os.path.expanduser把path中包含的"~"和"~user"转换成用户目录
         base_dir = osp.join(osp.expanduser(data_path), scene)
         data_dir = base_dir
         
@@ -61,7 +55,6 @@ class SevenScenes(data.Dataset):
             split_file = osp.join(base_dir, 'TrainSplit.txt')
         else:
             split_file = osp.join(base_dir, 'TestSplit.txt')
-        # 获取加载序列的序号
         with open(split_file, 'r') as f:
             seqs = [int(l.split('sequence')[-1]) for l in f if not l.startswith('#')]
         
@@ -77,28 +70,19 @@ class SevenScenes(data.Dataset):
             seq_data_dir = osp.join(data_dir, 'seq-{:02d}'.format(seq))
             p_filenames = [n for n in os.listdir(osp.join(seq_dir, '.')) if
                            n.find('pose') >= 0]
-            # 加载对应序列的相对位姿结果
             assert not real, 'we do not use vo'
-            # 尺寸为[n]
             frame_idx = np.array(range(len(p_filenames)), dtype=np.int)
-            # 列表，包含n个数组，尺寸为[12]
             pss = [np.loadtxt(osp.join(seq_dir, 'frame-{:06d}.pose.txt'.
                                        format(i))).flatten()[:12] for i in frame_idx]
-            # np.asarray将输入转换为数组
-            # 尺寸为[n,12]
             ps[seq] = np.asarray(pss)
-            # np.eye返回一个二维数组，对角线为1，其他位置为0
             vo_stats[seq] = {'R': np.eye(3), 't': np.zeros(3), 's': 1}
             
             self.gt_idx = np.hstack((self.gt_idx, gt_offset + frame_idx))
             gt_offset += len(p_filenames)
-            # 图像路径
             c_imgs = [osp.join(seq_dir, 'frame-{:06d}.color.png'.format(i))
                       for i in frame_idx]
-            # 深度图路径
             d_imgs = [osp.join(seq_dir, 'frame-{:06d}.depth.png'.format(i))
                       for i in frame_idx]
-            # extend用于在列表末尾一次性追加另一个序列中的多个值
             self.c_imgs.extend(c_imgs)
             self.d_imgs.extend(d_imgs)
         
@@ -114,7 +98,6 @@ class SevenScenes(data.Dataset):
         # convert pose to translation + log quaternion
         self.poses = np.empty((0, 6))
         for seq in seqs:
-            # 尺寸为[n,6]
             pss = process_poses(poses_in=ps[seq], mean_t=mean_t, std_t=std_t,
                                 align_R=vo_stats[seq]['R'], align_t=vo_stats[seq]['t'],
                                 align_s=vo_stats[seq]['s'])
@@ -208,14 +191,11 @@ class SevenScenes(data.Dataset):
                         'fea': fea[perm],
                         'idx': torch.from_numpy(npz['idx'])[perm].float(),
                         'label_nm': npz['label_nm'][perm],
-                        # 'fn': self.c_imgs[index],
-                        # 'metafn': metafn,
                         }
             else:
                 raise Exception('Wrong mode {:d}'.format(self.mode))
         
         if self.target_transform is not None:
-            # 尺寸为[6]
             pose = self.target_transform(pose)
         
         if self.transform is not None and img is not None:
@@ -269,12 +249,9 @@ if __name__ == '__main__':
         for batch_count, batch in enumerate(data_loader):
             print('Minibatch {:d}'.format(batch_count), len(data_loader))
             if mode < 2:
-                # make_grid制作网络图格
                 show_batch(make_grid(batch[0], nrow=1, padding=25, normalize=True))
             elif mode == 2:
-                # 尺寸为[3,BH,W]
                 lb = make_grid(batch[0][0], nrow=1, padding=25, normalize=True)
-                # 尺寸为[3,BH,W]
                 rb = make_grid(batch[0][1], nrow=1, padding=25, normalize=True)
                 show_stereo_batch(lb, rb)
             elif mode == 3:
@@ -291,12 +268,4 @@ if __name__ == '__main__':
                         meta0['bbox'],
                         meta0['idx'],
                     )
-                #     dets = meta0['bbox']
-                #     dets_test = trans_bbox_center2pnts(trans_bbox_mat2cv2_fmt(dets))
-                #     img_test = cv2.resize(to_img(rgb0.cpu().numpy()), (341, 256))
-                #     img_test = draw_bbox(img_test, dets_test)
-                #     img_tests.append(img_test)
-                # img_thumb = plt_imshow_tensor(img_tests)
-                # plt_imshow(img_thumb)
-                # plt.savefig('/tmp/t.png')
             break

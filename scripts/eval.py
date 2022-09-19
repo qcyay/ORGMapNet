@@ -1,8 +1,3 @@
-"""
-Copyright (C) 2018 NVIDIA Corporation.  All rights reserved.
-Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
-"""
- 
 import set_paths
 from common import Logger
 from common.criterion import PoseNetCriterion, MapNetCriterion
@@ -34,16 +29,14 @@ import pickle
 from dataset_loaders.seven_scenes import new_collate
 
 # config
-parser = argparse.ArgumentParser(description='Evaluation script for PoseNet and'
-                                             'MapNet variants')
+parser = argparse.ArgumentParser(description='Evaluation script for ORGPoseNet and'
+                                             'ORGMapNet variants')
 parser.add_argument('--dataset', type=str, choices=('7Scenes', 'RobotCar', 'RIO10'),
                     help='Dataset')
 parser.add_argument('--scene', type=str, help='Scene name')
 parser.add_argument('--weights', type=str, help='trained weights to load')
 parser.add_argument('--model', choices=('posenet', 'mapnet', 'mapnet++', 'orgposenet', 'orgmapnet'),
-  help='Model to use (mapnet includes both MapNet and MapNet++ since their'
-       'evluation process is the same and they only differ in the input weights'
-       'file')
+  help='Model to use')
 parser.add_argument('--device', type=str, default='0', help='GPU device(s)')
 parser.add_argument('--config_file', type=str, help='configuration file')
 parser.add_argument('--val', action='store_true', help='Plot graph for val')
@@ -114,7 +107,6 @@ t_criterion = lambda t_pred, t_gt: np.linalg.norm(t_pred - t_gt)
 q_criterion = quaternion_angular_error
 
 # load weights
-# os.path.expanduser把path中包含的"~"和"~user"转换成用户目录
 weights_filename = osp.expanduser(args.weights)
 if osp.isfile(weights_filename):
   loc_func = lambda storage, loc: storage
@@ -210,10 +202,6 @@ feats = np.zeros((L, C))
 
 # inference loop
 for batch_idx, (data, meta, target) in enumerate(loader):
-  # if batch_idx < 297:
-  #   continue
-  # if batch_idx == 300:
-  #   break
   if batch_idx % 200 == 0:
     print('Image {:d} / {:d}'.format(batch_idx, len(loader)))
 
@@ -227,33 +215,20 @@ for batch_idx, (data, meta, target) in enumerate(loader):
   # output : 1 x 6 or 1 x STEPS x 6
   _, _, output = step_feedfwd(data, meta, model, CUDA, train=False)
   if isinstance(output, tuple):
-    #尺寸为[1,T,C]
     feat = output[1]
     s = feat.size()
-    #尺寸为[T,C]
     feat = feat.cpu().data.numpy().reshape((-1, s[-1]))
-    #尺寸为[C]
     feat = feat[T//2]
-    #尺寸为[1,T,6]
     output = output[0]
   s = output.size()
-  #尺寸为[T,6]
   output = output.cpu().data.numpy().reshape((-1, s[-1]))
-  #尺寸为[T,6]
   target = target.numpy().reshape((-1, s[-1]))
   
   # normalize the predicted quaternions
-  #列表，包含T个数组，尺寸为[4]
   q = [qexp(p[3:]) for p in output]
-  #尺寸为[T,7]
   output = np.hstack((output[:, :3], np.asarray(q)))
-  #列表，包含T个数组，尺寸为[4]
   q = [qexp(p[3:]) for p in target]
-  #尺寸为[T,7]
   target = np.hstack((target[:, :3], np.asarray(q)))
-
-  # print(output)
-  # print(target)
 
   if args.pose_graph:  # do pose graph optimization
     kwargs = {'sax': sax, 'saq': saq, 'srx': srx, 'srq': srq}
@@ -277,24 +252,11 @@ for batch_idx, (data, meta, target) in enumerate(loader):
   elif args.model == 'orgmapnet':
     num_bboxs[idx] = len(meta[0][len(output) // 2]['bbox'])
 
-# pred_t_poses = pred_poses[:, :3]
-# targ_t_poses = targ_poses[:, :3]
-# print(pred_t_poses.mean(0))
-# print(pred_t_poses.std(0))
-# print(targ_t_poses.mean(0))
-# print(targ_t_poses.std(0))
-
 # calculate losses
 t_loss = np.asarray([t_criterion(p, t) for p, t in zip(pred_poses[:, T//2, :3],
                                                        targ_poses[:, T//2, :3])])
 q_loss = np.asarray([q_criterion(p, t) for p, t in zip(pred_poses[:, T//2, 3:],
                                                        targ_poses[:, T//2, 3:])])
-#eval_func = np.mean if args.dataset == 'RobotCar' else np.median
-#eval_str  = 'Mean' if args.dataset == 'RobotCar' else 'Median'
-#t_loss = eval_func(t_loss)
-#q_loss = eval_func(q_loss)
-#print '{:s} error in translation = {:3.2f} m\n' \
-#      '{:s} error in rotation    = {:3.2f} degrees'.format(eval_str, t_loss,
 
 result = ''.join(f'{k}: {v[0]:.2f} ' for k,v in train_criterion.named_parameters())
 print(''.join(f'{k}: {v[0]:.2f} ' for k,v in train_criterion.named_parameters()))
@@ -313,8 +275,6 @@ if args.dataset == 'RobotCar':
   ax = fig.add_subplot(111)
 else:
   ax = fig.add_subplot(111, projection='3d')
-#subplots_adjust调整子图布局参数
-# plt.subplots_adjust(left=0, bottom=0, right=1, top=1)
 ax.set_xlabel('x (m)')
 ax.set_ylabel('y (m)')
 if args.dataset != 'RobotCar':
@@ -326,28 +286,18 @@ if args.dataset != 'RobotCar':
 # plot on the figure object
 ss = max(1, int(len(data_set) // 1000))  # 100 for stairs
 # scatter the points and draw connecting line
-#尺寸为[2,n]
 x = np.vstack((pred_poses[::ss, T//2, 0].T, targ_poses[::ss, T//2, 0].T))
-#尺寸为[2,n]
 y = np.vstack((pred_poses[::ss, T//2, 1].T, targ_poses[::ss, T//2, 1].T))
 if args.dataset == 'RobotCar':  # 2D drawing
   ax.plot(x[0, :], y[0, :], c='r', marker='o', markersize=1, linewidth=1)
   ax.plot(x[1, :], y[1, :], c='k', linewidth=1)
-  # ax.plot(x, y, c='b')
-  # ax.scatter(x[0, :], y[0, :], c='r')
-  # ax.scatter(x[1, :], y[1, :], c='g')
 else:
-  #尺寸为[2,n]
   z = np.vstack((pred_poses[::ss, T//2, 2].T, targ_poses[::ss, T//2, 2].T))
   for xx, yy, zz in zip(x.T, y.T, z.T):
     ax.plot(xx, yy, zs=zz, c='b')
   ax.scatter(x[0, :], y[0, :], zs=z[0, :], c='r', depthshade=0)
   ax.scatter(x[1, :], y[1, :], zs=z[1, :], c='g', depthshade=0)
-  #view_init设置轴的仰角和方位角
   ax.view_init(azim=119, elev=13)
-
-# if DISPLAY:
-#   plt.show(block=True)
 
 if args.output_dir is not None:
   model_name = args.model

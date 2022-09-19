@@ -1,9 +1,4 @@
 """
-Copyright (C) 2018 NVIDIA Corporation.  All rights reserved.
-Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
-"""
-
-"""
 Composite data-loaders derived from class specific data loaders
 """
 import torch
@@ -68,17 +63,12 @@ class MF(data.Dataset):
         if self.variable_skip:
             skips = np.random.randint(1, high=self.skip + 1, size=self.steps - 1)
         else:
-            # 尺寸为[2]
             skips = self.skip * np.ones(self.steps - 1)
-        # np.insert在给定索引之前沿给定轴插入值
-        # np.cumsum返回给定轴上元素的累计和
-        # 尺寸为[3]
         offsets = np.insert(skips, 0, 0).cumsum()
         offsets -= offsets[len(offsets) // 2]
         if self.no_duplicates:
             offsets += self.steps // 2 * self.skip
         offsets = offsets.astype(np.int)
-        # 尺寸为[3]
         idx = index + offsets
         idx = np.minimum(np.maximum(idx, 0), len(self.dset) - 1)
         assert np.all(idx >= 0), '{:d}'.format(index)
@@ -92,14 +82,10 @@ class MF(data.Dataset):
                  poses: STEPS x 7
                  vos: (STEPS-1) x 7 (only if include_vos = True)
         """
-        # 尺寸为[3]
         idx = self.get_indices(index)
-        # 列表，包含3个元组
         clip = [self.dset[i] for i in idx]
-        
-        # 尺寸为[STEPS,3,H,W]
+
         imgs = torch.stack([c[0] for c in clip], dim=0)
-        # 尺寸为[STEPS,6]
         poses = torch.stack([c[2] for c in clip], dim=0)
         if self.include_vos:
             # vos = calc_vos_simple(poses.unsqueeze(0))[0] if self.train else \
@@ -209,7 +195,6 @@ if __name__ == '__main__':
                   steps=4,
                   )
     dset = MF('RIO10', **kwargs)
-    # print(dset[0])
     data_loader = data.DataLoader(dset, batch_size=3, shuffle=False,
                                   num_workers=0, collate_fn=new_collate)
     

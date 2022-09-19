@@ -1,9 +1,4 @@
 """
-Copyright (C) 2018 NVIDIA Corporation.  All rights reserved.
-Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
-"""
- 
-"""
 This module implements the various loss functions (a.k.a. criterions) used
 in the paper
 """
@@ -48,7 +43,6 @@ class PoseNetCriterion(nn.Module):
     """
 
     if isinstance(pred, tuple):
-      #尺寸为[N,T,6]
       pred = pred[0]
 
     loss = torch.exp(-self.sax) * self.t_loss_fn(pred[:, :3], targ[:, :3]) + \
@@ -96,7 +90,6 @@ class MapNetCriterion(nn.Module):
     """
 
     if isinstance(pred, tuple):
-      #尺寸为[N,T,6]
       pred = pred[0]
 
     # absolute pose loss
@@ -110,9 +103,7 @@ class MapNetCriterion(nn.Module):
       self.saq
 
     # get the VOs
-    #尺寸为[N,T-1,6]
     pred_vos = pose_utils.calc_vos_simple(pred)
-    #尺寸为[N,T-1,6]
     targ_vos = pose_utils.calc_vos_simple(targ)
 
     # VO loss

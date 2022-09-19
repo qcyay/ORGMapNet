@@ -1,8 +1,3 @@
-"""
-Copyright (C) 2018 NVIDIA Corporation.  All rights reserved.
-Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
-"""
- 
 import sys
 import os
 import os.path as osp
@@ -135,7 +130,6 @@ class Trainer(object):
       self.loss_win_list = ['t_loss_win', 'q_loss_win', 'vo_t_loss_win', 'vo_q_loss_win']
       self.q_loss_win = 'q_loss_win'
       self.vis = Visdom()
-      #Visdom().line绘制一个线条图
       self.vis.line(X=np.zeros((1,2)), Y=np.zeros((1,2)), win=self.loss_win,
         opts={'title': 'loss', 'legend': ['train_loss', 'val_loss'],
               'xlabel': 'epochs', 'ylabel': 'loss'}, env=self.vis_env)
@@ -181,10 +175,8 @@ class Trainer(object):
     print('---------------------------------------')
 
     # set random seed
-    #torch.manual_seed设置生成随机数的种子
     torch.manual_seed(self.config['seed'])
     if self.config['cuda']:
-      #torch.cuda.manual_seed设置为当前GPU生成随机数的种子
       torch.cuda.manual_seed(self.config['seed'])
 
     self.start_epoch = int(0)
@@ -390,16 +382,13 @@ def step_feedfwd(data, meta, model, cuda, target=None, criterion=None, optim=Non
     if meta is not None:
       meta = recursive_to(meta)
 
-  #torch.set_grad_enabled基于参数mode使用或禁用梯度
   with torch.set_grad_enabled(train):
-    #元组，包含poses，尺寸为[N,T,6]，feats，尺寸为[N,T,C]
     output = model(data_var, meta)
 
   if criterion is not None:
     if cuda:
       target = target.cuda(non_blocking=True)
 
-    #尺寸为[B,T,6]
     target_var = target
     with torch.set_grad_enabled(train):
       loss, loss_meta = criterion(output, target_var)
@@ -449,23 +438,16 @@ def step_lstm(data, model, cuda, target=None, criterion=None, optim=None,
   loss_accum_meta = {}
   b_start = np.random.randint(N%B + 1)
   for b in range(N//B):
-    #尺寸为[B]
     b_idx = b_start + torch.LongTensor(range(b*B, (b+1)*B))
-    #torch.index_select沿着指定维度对输入进行切片，取index中指定的相应项，然后返回到一个新的张量
-    #尺寸为[B,T,3,H,W]
     xb = torch.index_select(data_var, dim=0, index=b_idx)
     if target is not None:
-      #尺寸为[B,T,6]
       tb = torch.index_select(target, dim=0, index=b_idx.cuda())
     model.reset_hidden_states(B)
     g_start = np.random.randint(T%G + 1)
     for g in range(T//G):
-      #尺寸为[T]
       g_idx = g_start + torch.LongTensor(range(g*G, (g+1)*G))
-      #尺寸为[B,T,3,H,W]
       xg = torch.index_select(xb, dim=1, index=g_idx)
       if target is not None:
-        #尺寸为[B,T,6]
         tg = torch.index_select(tb, dim=1, index=g_idx.cuda())
       model.detach_hidden_states()
       output = model(xg, cuda=cuda, non_blocking=True)

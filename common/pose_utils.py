@@ -1,8 +1,3 @@
-"""
-Copyright (C) 2018 NVIDIA Corporation.  All rights reserved.
-Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
-"""
- 
 import torch
 from torch.nn import Module
 from torch.autograd import Variable
@@ -12,10 +7,6 @@ import scipy.linalg as slin
 import math
 import transforms3d.quaternions as txq
 import transforms3d.euler as txe
-# see for formulas:
-# https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-801-machine-vision-fall-2004/readings/quaternions.pdf
-# and "Quaternion and Rotation" - Yan-Bin Jia, September 18, 2016
-#from IPython.core.debugger import set_trace
 
 ## PYTORCH
 def vdot(v1, v2):
@@ -317,7 +308,6 @@ def qlog(q):
   if all(q[1:] == 0):
     q = np.zeros(3)
   else:
-    #np.arccos元素的三角反余弦值
     q = np.arccos(q[0]) * q[1:] / np.linalg.norm(q[1:])
   return q
 
@@ -328,12 +318,9 @@ def qexp(q):
   :return: (4,)
   """
   n = np.linalg.norm(q)
-  #np.sinc返回sinc函数，sinc函数为sin(pi*x)/(pi*x)
-  #尺寸为[4]
   q = np.hstack((np.cos(n), np.sinc(n/np.pi)*q))
   return q
 
-#位姿处理函数
 def process_poses(poses_in, mean_t, std_t, align_R, align_t, align_s):
   """
   processes the 1x12 raw pose from dataset by aligning and then normalizing
@@ -346,20 +333,14 @@ def process_poses(poses_in, mean_t, std_t, align_R, align_t, align_s):
   :return: processed poses (translation + quaternion) N x 7
   """
 
-  #尺寸为[N,6]
   poses_out = np.zeros((len(poses_in), 6))
-  #平移
   poses_out[:, 0:3] = poses_in[:, [3, 7, 11]]
 
   # align
   for i in range(len(poses_out)):
-    #旋转矩阵
     R = poses_in[i].reshape((3, 4))[:3, :3]
-    #txq.mat2quat计算对应于给定旋转矩阵的四元数
     q = txq.mat2quat(np.dot(align_R, R))
-    #np.sign返回数字符号的逐元素指示
     q *= np.sign(q[0])  # constrain to hemisphere
-    #尺寸为[3]
     q = qlog(q)
     poses_out[i, 3:] = q
     t = poses_out[i, :3] - align_t

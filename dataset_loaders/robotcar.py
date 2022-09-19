@@ -1,8 +1,3 @@
-"""
-Copyright (C) 2018 NVIDIA Corporation.  All rights reserved.
-Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
-"""
-
 import os
 import sys
 import os.path as osp
@@ -127,9 +122,7 @@ class RobotCar(data.Dataset):
         pose_stats_filename = osp.join(data_dir, 'pose_stats.txt')
         assert not real, 'we do not use vo'
         if train and not osp.exists(pose_stats_filename):
-            # 尺寸为[3]
             mean_t = np.mean(poses[:, [3, 7, 11]], axis=0)
-            # 尺寸为[3]
             std_t = np.std(poses[:, [3, 7, 11]], axis=0)
             np.savetxt(pose_stats_filename, np.vstack((mean_t, std_t)), fmt='%8.7f')
         else:
@@ -138,7 +131,6 @@ class RobotCar(data.Dataset):
         # convert the pose to translation + log quaternion, align, normalize
         self.poses = np.empty((0, 6))
         for seq in seqs:
-            # 尺寸为[n,6]
             pss = process_poses(poses_in=ps[seq], mean_t=mean_t, std_t=std_t,
                                 align_R=vo_stats[seq]['R'], align_t=vo_stats[seq]['t'],
                                 align_s=vo_stats[seq]['s'])
@@ -148,7 +140,6 @@ class RobotCar(data.Dataset):
         # camera model and image loader
         camera_model = CameraModel(osp.abspath(data_path + '/../robotcar_camera_models/'),
                                    osp.join('stereo', 'centre'))
-        # partial返回一个新的partial对象，该对象在被调用时的行为将类似于使用位置参数args和关键字参数arguments调用的func
         self.im_loader = partial(load_image, model=camera_model)
     
     @staticmethod
@@ -169,7 +160,6 @@ class RobotCar(data.Dataset):
         img = None
         while img is None:
             if self.undistort:
-                # img = dataset_loaders.utils.load_image(self.imgs[index], loader=self.im_loader)
                 img = self.im_loader(self.imgs[index])
             else:
                 img = dataset_loaders.utils.load_image(self.imgs[index])
@@ -209,12 +199,8 @@ class RobotCar(data.Dataset):
             else:
                 perm = torch.arange(len(bbox))
             meta = {'bbox': torch.from_numpy(bbox)[perm],
-                    # 'msk': torch.from_numpy(npz['msk'].astype('uint8')),
-                    # 'fea': fea[perm],
                     'idx': torch.from_numpy(npz['idx'])[perm].float(),
                     'label_nm': npz['label_nm'][perm],
-                    # 'fn': self.imgs[index],
-                    # 'metafn': metafn,
                     }
         
         if self.target_transform is not None:
@@ -250,10 +236,6 @@ if __name__ == '__main__':
             data_path = osp.join('..', 'data', 'deepslam_data', 'RobotCar')
             dset = RobotCar(scene, data_path, train=train, real=False, skip_images=True, transform=transform, log=log, mode=mode)
             print('Loaded RobotCar scene {:s}, length = {:d}'.format(scene, len(dset)))
-            ## plot the poses
-            # plt.figure()
-            # plt.plot(dset.poses[:, 0], dset.poses[:, 1])
-            # plt.show()
             data_loader = data.DataLoader(dset, batch_size=1, shuffle=False,
                                           num_workers=num_workers, collate_fn=new_collate)
             for batch in data_loader:
@@ -262,26 +244,12 @@ if __name__ == '__main__':
                 elif mode == 3:
                     rgb, meta, target = batch
                     for rgb0, meta0 in zip(rgb, meta):
-                        # dets = meta0['bbox']
-                        # dets_test = trans_bbox_center2pnts(trans_bbox_mat2cv2_fmt(dets))
-                        # img_test = to_img(rgb0.cpu().numpy())
-                        # if dets_test.shape[0] != 0:
-                        #     img_test = draw_bbox(img_test, dets_test, text=None)
-                        # dstfn = meta0['fn'].replace('centre_processed', 'centre_bbox')
-                        # dstpfn = osp.dirname(dstfn)
-                        # mkdir_p(dstpfn)
-                        # cv2.imwrite(dstfn, img_test[..., ::-1])
                         print(
                         meta0['bbox'].shape,
-                        # meta0['fea'].shape,
-                        # meta0['msk'].shape,
                         meta0['idx'].shape,
-                        # meta0['fn'],
                         )
                         print(
                             meta0['bbox'],
                             meta0['idx'],
                         )
-                        # plt_imshow(img_test)
-                        # plt.show()
                 break
