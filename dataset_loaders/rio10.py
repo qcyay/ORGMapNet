@@ -1,9 +1,4 @@
 """
-Copyright (C) 2018 NVIDIA Corporation.  All rights reserved.
-Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
-"""
-
-"""
 pytorch data loader for the 7-scenes dataset
 """
 import os
@@ -72,7 +67,6 @@ class RIO10(data.Dataset):
         np.random.seed(seed)
         
         # directories
-        # os.path.expanduser把path中包含的"~"和"~user"转换成用户目录
         base_dir = osp.join(osp.expanduser(data_path))
         img_dir = base_dir
         
@@ -93,22 +87,15 @@ class RIO10(data.Dataset):
             seq_dir = osp.join(img_dir, scene_folder_nm)
             p_filenames = [n for n in os.listdir(osp.join(seq_dir, '.')) if
                            n.find('pose') >= 0]
-            # 加载对应序列的相对位姿结果
-            
-            # 尺寸为[n]
+
             frame_idx = np.array(range(len(p_filenames)), dtype=np.int)
-            # 列表，包含n个数组，尺寸为[12]
             pss = [np.loadtxt(osp.join(seq_dir, 'frame-{:06d}.pose.txt'.
                                        format(i))).flatten()[:12] for i in frame_idx]
-            # np.asarray将输入转换为数组
-            # 尺寸为[n,12]
             ps[seq] = np.asarray(pss)
-            # np.eye返回一个二维数组，对角线为1，其他位置为0
             vo_stats[seq] = {'R': np.eye(3), 't': np.zeros(3), 's': 1}
             
             self.gt_idx = np.hstack((self.gt_idx, gt_offset + frame_idx))
             gt_offset += len(p_filenames)
-            # 图像路径
             c_imgs = [osp.join(seq_dir, 'frame-{:06d}.color.jpg'.format(i))
                       for i in frame_idx]
             self.c_imgs.extend(c_imgs)
@@ -135,7 +122,6 @@ class RIO10(data.Dataset):
         self.poses = np.empty((0, 6))
         self.with_null = with_null
         for seq in seqs:
-            # 尺寸为[n,6]
             pss = process_poses(poses_in=ps[seq], mean_t=mean_t, std_t=std_t,
                                 align_R=vo_stats[seq]['R'], align_t=vo_stats[seq]['t'],
                                 align_s=vo_stats[seq]['s'])
@@ -175,7 +161,6 @@ class RIO10(data.Dataset):
         elif self.mode == 3:  # rgb, meta, pose
             metafn = self.imgfn2metafn(self.c_imgs[index], log=self.log)
             npz = np.load(metafn)
-            fea = torch.from_numpy(npz['fea'].astype('float32'))
             bbox = npz['bbox'].astype('float32')
             # the loaded bbox is mat format, center point + size
             # row col height width
@@ -194,12 +179,8 @@ class RIO10(data.Dataset):
             else:
                 label_nm = label_nm[perm]
             meta = {'bbox': torch.from_numpy(bbox)[perm],
-                    'msk': torch.from_numpy(npz['msk'].astype('uint8')),
-                    'fea': fea[perm],
                     'idx': torch.from_numpy(np.asarray(idx, dtype='float32'))[perm],
                     'label_nm': label_nm,
-                    'fn': self.c_imgs[index],
-                    'metafn': metafn,
                     }
             null_label = ['wall', 'ceiling', 'floor', 'pipe']
             nonvalid_idx = np.array([lnm in null_label for lnm in meta['label_nm']])
@@ -228,8 +209,7 @@ class RIO10(data.Dataset):
             pnt = project_img_to_rect(pnt, fx, fy, cx, cy)
         else:
             raise Exception('Wrong mode {:d}'.format(self.mode))
-        
-        # 尺寸为[6]
+
         pose = self.target_transform(pose)
         
         if self.transform is not None and img is not None:
@@ -280,9 +260,6 @@ if __name__ == '__main__':
                          with_null=False)
             print('Loaded, length = {:d}'.format(len(dset)))
             
-            # plt.figure()
-            # plt.plot(dset.poses[:, 0], dset.poses[:, 1])
-            
             data_loader = data.DataLoader(dset, batch_size=3, shuffle=False,
                                           num_workers=num_workers, collate_fn=new_collate)
             for batch_count, batch in enumerate(data_loader):
@@ -295,23 +272,8 @@ if __name__ == '__main__':
                     for rgb0, meta0 in zip(rgb, meta):
                         print(
                             meta0['bbox'].shape,
-                            meta0['fea'].shape,
-                            meta0['msk'].shape,
                             meta0['idx'].shape
                         )
-                        print(
-                            meta0['bbox'],
-                            meta0['idx']
-                        )
-                        # dets_test = trans_bbox_center2pnts(trans_bbox_mat2cv2_fmt(dets))
-                        # img_test = cv2.resize(to_img(rgb0.cpu().numpy()), (256, 455))
-                        # img_test = draw_bbox(img_test, dets_test, text=meta0['label_nm'])
-                        
-                        # cv2.imwrite(f'{pref}/{sample_idx}.png', img_test[..., ::-1], )
-                        # img_tests.append(img_test)
-                    # img_thumb = plt_imshow_tensor(img_tests)
-                    # plt_imshow(img_thumb)
                 elif mode == 4:
                     rgb, target, pnt = batch['img'], batch['pose'], batch['pnt']
-            # fd2vdo(pref, f'{name}.mp4', fps=15, down=None)
                 break

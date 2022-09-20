@@ -174,8 +174,6 @@ class SevenScenes(data.Dataset):
                 index -= 1
                 metafn = self.imgfn2metafn(self.c_imgs[index], log=self.log)
                 npz = np.load(metafn)
-                fea = torch.from_numpy(npz['fea'].astype('float32'))
-                fea = self.fea_reduce_spatial(fea)
                 bbox = npz['bbox'].astype('float32')
                 # the loaded bbox is mat format, center point + size
                 # row col height width
@@ -187,8 +185,6 @@ class SevenScenes(data.Dataset):
                 else:
                     perm = torch.arange(len(bbox))
                 meta = {'bbox': torch.from_numpy(bbox)[perm],
-                        'msk': torch.from_numpy(npz['msk'].astype('uint8')),
-                        'fea': fea[perm],
                         'idx': torch.from_numpy(npz['idx'])[perm].float(),
                         'label_nm': npz['label_nm'][perm],
                         }

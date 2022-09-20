@@ -32,14 +32,29 @@ The datasets live in the `data/deepslam_data` directory.
 4. Pixel and Pose statistics must be calculated before any training. Use the `scripts/dataset_mean.py`, which also saves the information at the proper location. We provide pre-computed values for RobotCar and 7Scenes.
 
 ### Object Detections
+Objects of interest are obtained by the object detector [FCOS](https://github.com/tianzhi0549/FCOS) and saved as .npz files.
 
-We adopt different strategies for different datasets.
+As a dictionary, the .npz file needs to contain three items:
 
-For the 7Scenes dataset, we directly use the [FCOS](https://github.com/tianzhi0549/FCOS) network trained on the COCO dataset to obtain object detections.
+1. bbox : numpy array, $$ N \times 4 $$
+
+2. idx : numpy array, 
+
+3. label_nm : string, 
+
+We adopt different strategies for different datasets to obtain the groundtruth object boxes for training.
+
+For the 7Scenes dataset, we directly use the FCOS network trained on the COCO dataset to obtain object detections.
+
 For the RIO10 dataset, we obtain the groundtruth object boxes based on the provided instance segmentation labels.
+
 For the RobotCar dataset, we annotate static objects in a small number of images as groundtruth boxes.
 
+For training FCOS, please first add the image and label file paths to `FCOS/fcos_core/config/paths_catalog.py`,
+then modify the .yaml configuration file in the `FCOS/configs` according to the dataset.
 
+Besides, you can leverage various robust object detection frameworks in the widely used [MMDetection](https://github.com/open-mmlab/mmdetection) to generate object detections.
+We provide the relevant configuration files and [models](https://drive.google.com/drive/folders/1_Z83npfBhizjFz3jCmZVZ4jOI0YqWjez?usp=sharing) trained on the RobotCar dataset to make it easier for you to use MMDetection.
 
 ## Running the code
 

@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+nohup python detector_classification.py 2014-12-02-15-30-08.txt ../configs/cascade_rcnn.py work_dirs/cascade_rcnn/latest.pth --out-dir /home3/zjl/mmdetection-master/data/result/image/2014-12-02-15-30-08/ --score-thr 0.5 --device cuda:3 > output2014-12-02-15-30-08.log 2>&1 &

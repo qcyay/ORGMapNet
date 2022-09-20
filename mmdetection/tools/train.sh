@@ -1,0 +1,1 @@
+nohup python train.py ../configs/cascade_rcnn.py --gpu-ids 3 > output_100.log 2>&1 &
