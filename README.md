@@ -31,7 +31,15 @@ The datasets live in the `data/deepslam_data` directory.
 
 4. Pixel and Pose statistics must be calculated before any training. Use the `scripts/dataset_mean.py`, which also saves the information at the proper location. We provide pre-computed values for RobotCar and 7Scenes.
 
-### 
+### Object Detections
+
+We adopt different strategies for different datasets.
+
+For the 7Scenes dataset, we directly use the [FCOS](https://github.com/tianzhi0549/FCOS) network trained on the COCO dataset to obtain object detections.
+For the RIO10 dataset, we obtain the groundtruth object boxes based on the provided instance segmentation labels.
+For the RobotCar dataset, we annotate static objects in a small number of images as groundtruth boxes.
+
+
 
 ## Running the code
 
