@@ -36,11 +36,11 @@ Objects of interest are obtained by the object detector [FCOS](https://github.co
 
 As a dictionary, the .npz file needs to contain three items:
 
-1. bbox : numpy array, $$ N \times 4 $$
+1. bbox : numpy array, the sizes and positions of the object boxes.
 
-2. idx : numpy array, 
+2. idx : numpy array, the serial numbers of the object categoriers.
 
-3. label_nm : string, 
+3. label_nm : string, the classes of objects.
 
 We adopt different strategies for different datasets to obtain the groundtruth object boxes for training.
 
@@ -52,9 +52,10 @@ For the RobotCar dataset, we annotate static objects in a small number of images
 
 For training FCOS, please first add the image and label file paths to `FCOS/fcos_core/config/paths_catalog.py`,
 then modify the .yaml configuration file in the `FCOS/configs` according to the dataset.
+The [model](https://drive.google.com/drive/folders/1QHToZChZSddiLJ5DEyoM6nQ3bG29ANXn?usp=sharing) trained on the RobotCar dataset can be download here.
 
 Besides, you can leverage various robust object detection frameworks in the widely used [MMDetection](https://github.com/open-mmlab/mmdetection) to generate object detections.
-We provide the relevant configuration files and [models](https://drive.google.com/drive/folders/1_Z83npfBhizjFz3jCmZVZ4jOI0YqWjez?usp=sharing) trained on the RobotCar dataset to make it easier for you to use MMDetection.
+We provide the relevant configuration file and the [model](https://drive.google.com/drive/folders/1rytwsakcVdEoG-eNgl5i09_B05O2GCIl?usp=sharing) trained on the RobotCar dataset to make it easier for you to use MMDetection.
 
 ## Running the code
 
